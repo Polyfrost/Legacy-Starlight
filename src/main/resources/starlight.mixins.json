@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ca.spottedleaf.starlight.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "common.AnvilChunkStorageMixin",
+    "common.ServerWorldMixin",
+    "common.WorldChunkMixin",
+    "common.WorldChunkS2CPacketMixin",
+    "common.WorldMixin"
+  ],
+  "client": [
+    "client.ClientChunkCacheMixin",
+    "client.ClientWorldMixin",
+    "client.WorldChunkClientMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

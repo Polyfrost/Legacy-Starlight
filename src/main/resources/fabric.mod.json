@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "Rewrites the light engine to fix lighting performance and lighting errors. Port of Starlight / ScalableLux to ${minecraft_version}.",
+  "authors": [
+    "Spottedleaf",
+    "ishland",
+    "Polyfrost"
+  ],
+  "contact": {
+    "sources": "https://github.com/Polyfrost/Legacy-Starlight"
+  },
+  "license": "GPL-3.0-only",
+  "environment": "*",
+  "mixins": [
+    "starlight.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}"
+  }
+}
