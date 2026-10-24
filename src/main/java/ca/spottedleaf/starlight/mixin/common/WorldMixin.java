@@ -14,7 +14,9 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(World.class)
 public abstract class WorldMixin implements ExtendedWorld {
@@ -62,13 +64,9 @@ public abstract class WorldMixin implements ExtendedWorld {
         return true;
     }
 
-    /**
-     * @reason The vanilla light engine is replaced by starlight
-     * @author Spottedleaf
-     */
-    @Overwrite
-    public boolean updateLight(final LightType type, final BlockPos pos) {
-        return true;
+    @Inject(method = "updateLight", at = @At("HEAD"), cancellable = true)
+    private void skipVanillaLightUpdate(final LightType type, final BlockPos pos, final CallbackInfoReturnable<Boolean> cir) {
+        cir.setReturnValue(true);
     }
 
     @Redirect(
