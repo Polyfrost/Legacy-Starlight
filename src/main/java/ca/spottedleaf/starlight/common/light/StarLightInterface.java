@@ -140,9 +140,12 @@ public final class StarLightInterface {
     }
 
     public static void syncSection(final WorldChunk chunk, final int sectionY) {
-        final WorldChunkSection section = chunk.getSections()[sectionY];
+        WorldChunkSection section = chunk.getSections()[sectionY];
         if (section == null) {
-            return;
+            if (!chunk.getWorld().isClient || !needsSection(chunk, sectionY)) {
+                return;
+            }
+            section = chunk.getSections()[sectionY] = new WorldChunkSection(sectionY << 4, !chunk.getWorld().dimension.hasNoSky());
         }
 
         ((ExtendedChunk)chunk).getBlockNibbles()[sectionY + 1].copyVisibleTo(section.getBlockLightStorage().getData());
@@ -166,6 +169,42 @@ public final class StarLightInterface {
                 }
             }
         }
+    }
+
+    private static boolean needsSection(final WorldChunk chunk, final int sectionY) {
+        final SWMRNibbleArray blockNibble = ((ExtendedChunk)chunk).getBlockNibbles()[sectionY + 1];
+        if (blockNibble.isInitialisedVisible() || blockNibble.isHiddenVisible()) {
+            for (int i = 0; i < 4096; ++i) {
+                if (blockNibble.getVisible(i) != 0) {
+                    return true;
+                }
+            }
+        }
+
+        if (chunk.getWorld().dimension.hasNoSky()) {
+            return false;
+        }
+
+        final SWMRNibbleArray skyNibble = ((ExtendedChunk)chunk).getSkyNibbles()[sectionY + 1];
+        final int minY = sectionY << 4;
+        for (int z = 0; z < 16; ++z) {
+            for (int x = 0; x < 16; ++x) {
+                final int height = chunk.getHeight(x, z);
+                if (skyNibble.isNullNibbleVisible()) {
+                    final int level = getSkyLightValue(chunk, x, minY, z);
+                    if (level != (minY >= height ? 15 : 0) || level != (minY + 15 >= height ? 15 : 0)) {
+                        return true;
+                    }
+                    continue;
+                }
+                for (int y = 0; y < 16; ++y) {
+                    if (skyNibble.getVisible(x, y, z) != (minY + y >= height ? 15 : 0)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public static void syncChangedSection(final WorldChunk chunk, final int sectionY) {

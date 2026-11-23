@@ -159,6 +159,35 @@ public class LightEngineTest {
         verify(world, "relit chunk");
     }
 
+    @Test
+    public void floatingBlocksOverFlatGround() {
+        StarLightInterface.asyncClient = false;
+        final TestWorld world = new TestWorld();
+        final StarLightInterface lightEngine = ((ExtendedWorld)(Object)world).getLightEngine();
+        for (int chunkX = -1; chunkX <= 1; ++chunkX) {
+            for (int chunkZ = -1; chunkZ <= 1; ++chunkZ) {
+                final WorldChunk chunk = new WorldChunk(world, chunkX, chunkZ);
+                for (int x = 0; x < 16; ++x) {
+                    for (int z = 0; z < 16; ++z) {
+                        for (int y = 0; y <= 3; ++y) {
+                            chunk.setBlockState(new BlockPos((chunkX << 4) + x, y, (chunkZ << 4) + z), Blocks.STONE.defaultState());
+                        }
+                    }
+                }
+                world.chunks.put(key(chunkX, chunkZ), chunk);
+                lightEngine.lightChunk(chunk);
+            }
+        }
+        verify(world, "flat ground", false);
+
+        for (int x = -16; x < 32; ++x) {
+            world.setBlockState(new BlockPos(x, 40, 5), Blocks.STONE.defaultState(), 2);
+        }
+        world.setBlockState(new BlockPos(3, 100, 3), Blocks.STONE.defaultState(), 2);
+        lightEngine.propagateChanges();
+        verify(world, "bridge", false);
+    }
+
     private static long key(final int chunkX, final int chunkZ) {
         return ((long)chunkZ << 32) | (chunkX & 0xFFFFFFFFL);
     }
@@ -168,6 +197,10 @@ public class LightEngineTest {
     }
 
     private static void verify(final TestWorld world, final String stage) {
+        verify(world, stage, true);
+    }
+
+    private static void verify(final TestWorld world, final String stage, final boolean checkCounts) {
         final int[] opacity = new int[SIZE * SIZE * HEIGHT];
         final int[] emission = new int[SIZE * SIZE * HEIGHT];
         for (int x = MIN_BLOCK; x < MIN_BLOCK + SIZE; ++x) {
@@ -209,6 +242,9 @@ public class LightEngineTest {
                     final int gotSky = chunk.getLight(LightType.SKY, pos);
                     final int gotBlock = chunk.getLight(LightType.BLOCK, pos);
                     final WorldChunkSection section = chunk.getSections()[y >> 4];
+                    if (section == null && (gotBlock != 0 || gotSky != (y >= chunk.getHeight(x & 15, z & 15) ? 15 : 0)) && errors.size() < 20) {
+                        errors.add(pos + " missing vanilla section, engine sky " + gotSky + " block " + gotBlock);
+                    }
                     if (section != null && (section.getSkyLight(x & 15, y & 15, z & 15) != gotSky || section.getBlockLight(x & 15, y & 15, z & 15) != gotBlock) && errors.size() < 20) {
                         errors.add(pos + " vanilla storage sky " + section.getSkyLight(x & 15, y & 15, z & 15) + " (engine " + gotSky + ") block " + section.getBlockLight(x & 15, y & 15, z & 15) + " (engine " + gotBlock + ")");
                     }
@@ -225,7 +261,7 @@ public class LightEngineTest {
             }
         }
         Assertions.assertTrue(errors.isEmpty(), stage + ": " + errors);
-        Assertions.assertTrue(dimSky > 10000 && litBlock > 10000, stage + ": " + dimSky + " dim sky blocks, " + litBlock + " lit blocks");
+        Assertions.assertTrue(!checkCounts || dimSky > 10000 && litBlock > 10000, stage + ": " + dimSky + " dim sky blocks, " + litBlock + " lit blocks");
     }
 
     private static void flood(final int[] levels, final int[] opacity) {
