@@ -20,5 +20,12 @@
   "depends": {
     "fabricloader": ">=${loader_version}",
     "minecraft": "${minecraft_version}"
+  },
+  "custom": {
+    "sarcio:disable": [
+      "mem.footprint.compact_light_data",
+      "mem.leak.world.ChunkNibbleStorageMixin",
+      "mem.leak.world.WorldChunkMixin"
+    ]
   }
 }

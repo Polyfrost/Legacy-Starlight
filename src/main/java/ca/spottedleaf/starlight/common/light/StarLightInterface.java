@@ -148,7 +148,7 @@ public final class StarLightInterface {
             section = chunk.getSections()[sectionY] = new WorldChunkSection(sectionY << 4, !chunk.getWorld().dimension.hasNoSky());
         }
 
-        ((ExtendedChunk)chunk).getBlockNibbles()[sectionY + 1].copyVisibleTo(section.getBlockLightStorage().getData());
+        ((ExtendedChunk)chunk).getBlockNibbles()[sectionY + 1].copyVisibleTo(writableData(section.getBlockLightStorage()));
 
         final ChunkNibbleStorage sky = section.getSkyLightStorage();
         if (sky == null) {
@@ -157,7 +157,7 @@ public final class StarLightInterface {
 
         final SWMRNibbleArray skyNibble = ((ExtendedChunk)chunk).getSkyNibbles()[sectionY + 1];
         if (!skyNibble.isNullNibbleVisible()) {
-            skyNibble.copyVisibleTo(sky.getData());
+            skyNibble.copyVisibleTo(writableData(sky));
             return;
         }
 
@@ -169,6 +169,11 @@ public final class StarLightInterface {
                 }
             }
         }
+    }
+
+    private static byte[] writableData(final ChunkNibbleStorage storage) {
+        storage.set(0, 0, 0, storage.get(0, 0, 0));
+        return storage.getData();
     }
 
     private static boolean needsSection(final WorldChunk chunk, final int sectionY) {
